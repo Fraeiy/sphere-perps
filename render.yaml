@@ -1,5 +1,7 @@
 # Render Blueprint — FREE tier
-# Repo must be connected first: Render Dashboard → Account Settings → GitHub
+# If Blueprint fails with "invalid repository", use manual deploy:
+# https://dashboard.render.com/create?type=web
+# See scripts/render-fix.md
 
 services:
   - type: web
@@ -16,7 +18,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: "4000"
+        value: 4000
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
