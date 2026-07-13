@@ -1,0 +1,21 @@
+{
+  "name": "sphere-perps",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hyperliquid-style perpetual futures trading platform on Unicity Sphere SDK",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "db:setup": "npm run db:setup -w backend",
+    "db:migrate": "npm run db:migrate -w backend",
+    "db:seed": "npm run db:seed -w backend",
+    "db:studio": "npm run db:studio -w backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

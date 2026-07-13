@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sphere-perps-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sphere
+      POSTGRES_PASSWORD: sphere_dev_password
+      POSTGRES_DB: sphere_perps
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sphere -d sphere_perps']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sphere-perps-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://sphere:sphere_dev_password@postgres:5432/sphere_perps
+      JWT_SECRET: change-me-in-production
+      SPHERE_ORACLE_API_KEY: sk_ddc3cfcc001e4a28ac3fad7407f99590
+      SPHERE_WALLET_API_URL: https://wallet-api.unicity.network
+      SPHERE_TREASURY_NAMETAG: sphere-perps-treasury
+      CORS_ORIGIN: http://localhost:5173
+      AI_PROVIDER: mock
+    ports:
+      - '4000:4000'
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sphere-perps-web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:4000
+      VITE_WS_URL: ws://localhost:4000/ws
+      VITE_SPHERE_WALLET_URL: https://sphere.unicity.network
+    ports:
+      - '5173:80'
+
+volumes:
+  postgres_data:

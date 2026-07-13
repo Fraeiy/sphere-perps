@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: sphere-perps-api
+    runtime: node
+    buildCommand: npm install && npm run db:generate && npm run build -w backend
+    startCommand: npm run start -w backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: SPHERE_ORACLE_API_KEY
+        value: sk_ddc3cfcc001e4a28ac3fad7407f99590
+      - key: SPHERE_WALLET_API_URL
+        value: https://wallet-api.unicity.network
+      - key: SPHERE_TREASURY_NAMETAG
+        value: sphere-perps-treasury
+      - key: AI_PROVIDER
+        value: mock

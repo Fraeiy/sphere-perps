@@ -1,0 +1,440 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MarginMode {
+  CROSS
+  ISOLATED
+}
+
+enum PositionSide {
+  LONG
+  SHORT
+}
+
+enum OrderType {
+  MARKET
+  LIMIT
+  STOP_LOSS
+  TAKE_PROFIT
+}
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
+enum OrderStatus {
+  PENDING
+  OPEN
+  PARTIALLY_FILLED
+  FILLED
+  CANCELLED
+  REJECTED
+  EXPIRED
+}
+
+enum PositionStatus {
+  OPEN
+  CLOSED
+  LIQUIDATED
+}
+
+enum DepositStatus {
+  PENDING
+  CONFIRMING
+  COMPLETED
+  FAILED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum NotificationType {
+  LIQUIDATION_WARNING
+  ORDER_FILLED
+  TP_HIT
+  SL_HIT
+  DEPOSIT_COMPLETE
+  WITHDRAWAL_COMPLETE
+  REFERRAL_REWARD
+  COMPETITION_UPDATE
+  ACHIEVEMENT_UNLOCKED
+  SYSTEM
+}
+
+enum CompetitionStatus {
+  UPCOMING
+  ACTIVE
+  ENDED
+}
+
+model User {
+  id              String   @id @default(cuid())
+  chainPubkey     String   @unique
+  directAddress   String?
+  nametag         String?
+  referralCode    String   @unique @default(cuid())
+  referredById    String?
+  referredBy      User?    @relation("Referrals", fields: [referredById], references: [id])
+  referrals       User[]   @relation("Referrals")
+  isAdmin         Boolean  @default(false)
+  isBanned        Boolean  @default(false)
+  lastLoginAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  wallet          Wallet?
+  balance         Balance?
+  positions       Position[]
+  orders          Order[]
+  trades          Trade[]
+  fundingPayments FundingPayment[]
+  deposits        Deposit[]
+  withdrawals     Withdrawal[]
+  notifications   Notification[]
+  achievements    UserAchievement[]
+  referralRewards ReferralReward[]
+  tradeJournals   TradeJournal[]
+  settings        Settings?
+  leaderboardEntries LeaderboardEntry[]
+
+  @@index([nametag])
+  @@index([referralCode])
+}
+
+model Wallet {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chainPubkey   String   @unique
+  directAddress String?
+  nametag       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Balance {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  available       Decimal  @default(0) @db.Decimal(24, 8)
+  locked          Decimal  @default(0) @db.Decimal(24, 8)
+  totalDeposited  Decimal  @default(0) @db.Decimal(24, 8)
+  totalWithdrawn  Decimal  @default(0) @db.Decimal(24, 8)
+  realizedPnl     Decimal  @default(0) @db.Decimal(24, 8)
+  updatedAt       DateTime @updatedAt
+}
+
+model Market {
+  id                  String   @id @default(cuid())
+  symbol              String   @unique
+  baseAsset           String
+  quoteAsset          String   @default("USD")
+  binanceSymbol       String   @unique
+  tickSize            Decimal  @db.Decimal(24, 8)
+  lotSize             Decimal  @db.Decimal(24, 8)
+  minOrderSize        Decimal  @db.Decimal(24, 8)
+  maxLeverage         Int      @default(100)
+  maintenanceMargin   Decimal  @default(0.005) @db.Decimal(10, 6)
+  initialMargin       Decimal  @default(0.01) @db.Decimal(10, 6)
+  fundingRate         Decimal  @default(0.0001) @db.Decimal(10, 8)
+  fundingIntervalHours Int     @default(8)
+  isActive            Boolean  @default(true)
+  isTrending          Boolean  @default(false)
+  sortOrder           Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  positions           Position[]
+  orders              Order[]
+  trades              Trade[]
+  fundingPayments     FundingPayment[]
+  priceSnapshots      PriceSnapshot[]
+}
+
+model Position {
+  id                String         @id @default(cuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketId          String
+  market            Market         @relation(fields: [marketId], references: [id])
+  side              PositionSide
+  marginMode        MarginMode     @default(CROSS)
+  leverage          Int
+  size              Decimal        @db.Decimal(24, 8)
+  entryPrice        Decimal        @db.Decimal(24, 8)
+  markPrice         Decimal        @db.Decimal(24, 8)
+  liquidationPrice  Decimal        @db.Decimal(24, 8)
+  marginUsed        Decimal        @db.Decimal(24, 8)
+  maintenanceMargin Decimal        @db.Decimal(24, 8)
+  unrealizedPnl     Decimal        @default(0) @db.Decimal(24, 8)
+  realizedPnl       Decimal        @default(0) @db.Decimal(24, 8)
+  roe               Decimal        @default(0) @db.Decimal(10, 4)
+  stopLoss          Decimal?       @db.Decimal(24, 8)
+  takeProfit        Decimal?       @db.Decimal(24, 8)
+  status            PositionStatus @default(OPEN)
+  closedAt          DateTime?
+  closePrice        Decimal?       @db.Decimal(24, 8)
+  closeReason       String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  trades            Trade[]
+  fundingPayments   FundingPayment[]
+  tradeJournal      TradeJournal?
+
+  @@index([userId, status])
+  @@index([marketId, status])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketId      String
+  market        Market      @relation(fields: [marketId], references: [id])
+  type          OrderType
+  side          OrderSide
+  marginMode    MarginMode  @default(CROSS)
+  leverage      Int
+  size          Decimal     @db.Decimal(24, 8)
+  price         Decimal?    @db.Decimal(24, 8)
+  stopPrice     Decimal?    @db.Decimal(24, 8)
+  filledSize    Decimal     @default(0) @db.Decimal(24, 8)
+  avgFillPrice  Decimal?    @db.Decimal(24, 8)
+  status        OrderStatus @default(PENDING)
+  reduceOnly    Boolean     @default(false)
+  clientOrderId String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  expiresAt     DateTime?
+
+  trades        Trade[]
+
+  @@index([userId, status])
+  @@index([marketId, status])
+}
+
+model Trade {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketId    String
+  market      Market   @relation(fields: [marketId], references: [id])
+  positionId  String?
+  position    Position? @relation(fields: [positionId], references: [id])
+  orderId     String?
+  order       Order?   @relation(fields: [orderId], references: [id])
+  side        OrderSide
+  size        Decimal  @db.Decimal(24, 8)
+  price       Decimal  @db.Decimal(24, 8)
+  fee         Decimal  @default(0) @db.Decimal(24, 8)
+  realizedPnl Decimal  @default(0) @db.Decimal(24, 8)
+  isMaker     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([marketId, createdAt])
+}
+
+model FundingPayment {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketId   String
+  market     Market   @relation(fields: [marketId], references: [id])
+  positionId String
+  position   Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  rate       Decimal  @db.Decimal(10, 8)
+  payment    Decimal  @db.Decimal(24, 8)
+  markPrice  Decimal  @db.Decimal(24, 8)
+  size       Decimal  @db.Decimal(24, 8)
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Deposit {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Decimal       @db.Decimal(24, 8)
+  txHash        String?
+  sphereTransferId String?
+  status        DepositStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  completedAt   DateTime?
+
+  @@index([userId, status])
+}
+
+model Withdrawal {
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount           Decimal          @db.Decimal(24, 8)
+  recipientAddress String
+  sphereTransferId String?
+  status           WithdrawalStatus @default(PENDING)
+  createdAt        DateTime         @default(now())
+  completedAt      DateTime?
+
+  @@index([userId, status])
+}
+
+model LeaderboardEntry {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  period       String
+  periodStart  DateTime
+  periodEnd    DateTime
+  roi          Decimal  @default(0) @db.Decimal(10, 4)
+  pnl          Decimal  @default(0) @db.Decimal(24, 8)
+  winRate      Decimal  @default(0) @db.Decimal(10, 4)
+  volume       Decimal  @default(0) @db.Decimal(24, 8)
+  tradeCount   Int      @default(0)
+  consistency  Decimal  @default(0) @db.Decimal(10, 4)
+  rank         Int?
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, period, periodStart])
+  @@index([period, periodStart, rank])
+}
+
+model Competition {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  status      CompetitionStatus @default(UPCOMING)
+  startAt     DateTime
+  endAt       DateTime
+  prizePool   Decimal           @default(0) @db.Decimal(24, 8)
+  rules       Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model ReferralReward {
+  id           String   @id @default(cuid())
+  referrerId   String
+  referrer     User     @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  referredId   String
+  amount       Decimal  @db.Decimal(24, 8)
+  type         String
+  createdAt    DateTime @default(now())
+
+  @@index([referrerId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String
+  icon        String?
+  category    String
+  threshold   Int?
+  createdAt   DateTime @default(now())
+
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  unlockedAt    DateTime @default(now())
+  streak        Int      @default(0)
+
+  @@unique([userId, achievementId])
+}
+
+model Settings {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultLeverage Int      @default(10)
+  defaultMarginMode MarginMode @default(CROSS)
+  favoriteMarkets String[] @default([])
+  recentMarkets   String[] @default([])
+  notifications   Json     @default("{}")
+  updatedAt       DateTime @updatedAt
+}
+
+model TradeJournal {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  positionId  String   @unique
+  position    Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  summary     String
+  analysis    String
+  riskScore   Int?
+  suggestions Json?
+  createdAt   DateTime @default(now())
+}
+
+model PriceSnapshot {
+  id           String   @id @default(cuid())
+  marketId     String
+  market       Market   @relation(fields: [marketId], references: [id])
+  price        Decimal  @db.Decimal(24, 8)
+  markPrice    Decimal  @db.Decimal(24, 8)
+  indexPrice   Decimal  @db.Decimal(24, 8)
+  change24h    Decimal  @default(0) @db.Decimal(10, 4)
+  volume24h    Decimal  @default(0) @db.Decimal(24, 8)
+  high24h      Decimal  @default(0) @db.Decimal(24, 8)
+  low24h       Decimal  @default(0) @db.Decimal(24, 8)
+  fundingRate  Decimal  @default(0) @db.Decimal(10, 8)
+  nextFundingAt DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([marketId, createdAt])
+}
+
+model SystemSettings {
+  id              String   @id @default("global")
+  tradingEnabled  Boolean  @default(true)
+  maxLeverage     Int      @default(100)
+  maintenanceMode Boolean  @default(false)
+  depositEnabled  Boolean  @default(true)
+  withdrawalEnabled Boolean @default(true)
+  updatedAt       DateTime @updatedAt
+}
+
+model AuthNonce {
+  id        String   @id @default(cuid())
+  nonce     String   @unique
+  chainPubkey String?
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+}
