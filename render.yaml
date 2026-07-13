@@ -1,6 +1,5 @@
-# Render Blueprint — FREE tier (750 hrs/month)
-# Deploy: https://dashboard.render.com/select-repo?type=blueprint
-# Spins down after 15 min idle — first request may take ~30s to wake up
+# Render Blueprint — FREE tier
+# Repo must be connected first: Render Dashboard → Account Settings → GitHub
 
 services:
   - type: web
@@ -8,6 +7,8 @@ services:
     runtime: node
     plan: free
     region: oregon
+    repo: https://github.com/Fraeiy/sphere-perps
+    branch: main
     buildCommand: npm install && npm run db:generate -w backend && npm run build -w backend
     startCommand: npm run db:push -w backend && npm run start -w backend
     healthCheckPath: /health
@@ -15,7 +16,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 4000
+        value: "4000"
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET

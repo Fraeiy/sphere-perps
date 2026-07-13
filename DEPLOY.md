@@ -44,16 +44,24 @@ Then redeploy (or push to `main` — auto-deploys).
 
 ## 3. Backend — Render (free)
 
-### Option A — Blueprint (easiest)
+### If you see "invalid repository"
 
-1. Go to [Render Dashboard → New Blueprint](https://dashboard.render.com/select-repo?type=blueprint)
-2. Connect GitHub → select **Fraeiy/sphere-perps**
-3. Render reads `render.yaml` automatically
-4. When prompted, paste your **Neon `DATABASE_URL`**
-5. Click **Apply** → wait for deploy (~5 min)
-6. Copy your service URL (e.g. `https://sphere-perps-api.onrender.com`)
+Render can't access the GitHub repo. Fix:
 
-### Option B — Manual web service
+1. [Render Settings → GitHub](https://dashboard.render.com/u/settings#integrations) → **Configure**
+2. Log in as **Fraeiy** (repo owner) on GitHub
+3. Grant access to **Fraeiy/sphere-perps** only
+4. Delete the failed Blueprint, then use **Option B** below
+
+Full troubleshooting: `scripts/render-fix.md`
+
+### Option A — Blueprint
+
+1. Fix GitHub access first (above)
+2. [New Blueprint](https://dashboard.render.com/select-repo?type=blueprint) → **Fraeiy/sphere-perps**
+3. Paste **Neon `DATABASE_URL`** when prompted → **Apply**
+
+### Option B — Manual web service (recommended if Blueprint failed)
 
 1. [Render Dashboard → New Web Service](https://dashboard.render.com/create?type=web)
 2. Connect **Fraeiy/sphere-perps** repo
