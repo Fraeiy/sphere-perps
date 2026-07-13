@@ -1,18 +1,27 @@
+# Render Blueprint — FREE tier (750 hrs/month)
+# Deploy: https://dashboard.render.com/select-repo?type=blueprint
+# Spins down after 15 min idle — first request may take ~30s to wake up
+
 services:
   - type: web
     name: sphere-perps-api
     runtime: node
-    buildCommand: npm install && npm run db:generate && npm run build -w backend
-    startCommand: npm run start -w backend
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run db:generate -w backend && npm run build -w backend
+    startCommand: npm run db:push -w backend && npm run start -w backend
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 4000
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        sync: false
+        value: https://sphere-perps.vercel.app
       - key: SPHERE_ORACLE_API_KEY
         value: sk_ddc3cfcc001e4a28ac3fad7407f99590
       - key: SPHERE_WALLET_API_URL

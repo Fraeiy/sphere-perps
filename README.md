@@ -172,7 +172,7 @@ vercel --prod
 
 Set environment variables in Vercel dashboard.
 
-### Backend (Railway / Render / Fly.io)
+### Backend (Render free tier — recommended)
 
 1. Connect repository
 2. Set `DATABASE_URL` to Supabase/Neon PostgreSQL

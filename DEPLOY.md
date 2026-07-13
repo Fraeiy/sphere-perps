@@ -1,76 +1,120 @@
 # Deployment Guide
 
-## Architecture
+## Architecture (all free tiers)
 
-| Service | Platform | Purpose |
-|---------|----------|---------|
-| Frontend | **Vercel** | React trading UI |
-| Backend API | **Railway** or **Render** | Express + WebSocket |
-| Database | **Neon** | PostgreSQL (already configured) |
+| Service | Platform | Cost |
+|---------|----------|------|
+| Frontend | **Vercel** | Free |
+| Backend API | **Render** | Free (750 hrs/mo) |
+| Database | **Neon** | Free |
 
-## 1. Push to GitHub
+> **No Railway required.** Render's free web service runs your Express + WebSocket backend.
 
-```bash
-cd sphere-perps
-git init
-git add .
-git commit -m "Initial commit: Sphere Perps trading platform"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/sphere-perps.git
-git push -u origin main
+## Free tier limits to know
+
+| Platform | Limit |
+|----------|-------|
+| **Render** | Spins down after 15 min idle; ~30s cold start on wake |
+| **Neon** | 0.5 GB storage, compute hours capped |
+| **Vercel** | 100 GB bandwidth/mo on hobby |
+
+---
+
+## 1. Database — Neon (done)
+
+You already have Neon configured. Use your connection string as `DATABASE_URL`.
+
+---
+
+## 2. Frontend — Vercel (done)
+
+**Live:** https://sphere-perps.vercel.app
+
+After backend deploy, add these in Vercel → Settings → Environment Variables:
+
+```
+VITE_API_URL=https://sphere-perps-api.onrender.com
+VITE_WS_URL=wss://sphere-perps-api.onrender.com/ws
+VITE_SPHERE_WALLET_URL=https://sphere.unicity.network
 ```
 
-## 2. Deploy Backend (Railway — recommended)
+Then redeploy (or push to `main` — auto-deploys).
 
-1. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
-2. Select your `sphere-perps` repo
-3. Set **Root Directory** to `backend` (or use monorepo with custom start)
-4. Add environment variables:
+---
+
+## 3. Backend — Render (free)
+
+### Option A — Blueprint (easiest)
+
+1. Go to [Render Dashboard → New Blueprint](https://dashboard.render.com/select-repo?type=blueprint)
+2. Connect GitHub → select **Fraeiy/sphere-perps**
+3. Render reads `render.yaml` automatically
+4. When prompted, paste your **Neon `DATABASE_URL`**
+5. Click **Apply** → wait for deploy (~5 min)
+6. Copy your service URL (e.g. `https://sphere-perps-api.onrender.com`)
+
+### Option B — Manual web service
+
+1. [Render Dashboard → New Web Service](https://dashboard.render.com/create?type=web)
+2. Connect **Fraeiy/sphere-perps** repo
+3. Settings:
+
+| Setting | Value |
+|---------|-------|
+| **Name** | `sphere-perps-api` |
+| **Region** | Oregon (US West) |
+| **Branch** | `main` |
+| **Runtime** | Node |
+| **Plan** | **Free** |
+| **Build Command** | `npm install && npm run db:generate -w backend && npm run build -w backend` |
+| **Start Command** | `npm run db:push -w backend && npm run start -w backend` |
+
+4. Environment variables:
 
 ```
-DATABASE_URL=postgresql://neondb_owner:...@ep-xxx.neon.tech/neondb?sslmode=require
-JWT_SECRET=<random-32-char-string>
-CORS_ORIGIN=https://your-app.vercel.app
+NODE_ENV=production
 PORT=4000
+DATABASE_URL=<your Neon connection string>
+JWT_SECRET=<random 32-char string>
+CORS_ORIGIN=https://sphere-perps.vercel.app
 SPHERE_ORACLE_API_KEY=sk_ddc3cfcc001e4a28ac3fad7407f99590
 SPHERE_WALLET_API_URL=https://wallet-api.unicity.network
 SPHERE_TREASURY_NAMETAG=sphere-perps-treasury
 AI_PROVIDER=mock
 ```
 
-5. **Build command:** `npm install && npx prisma generate && npm run build`
-6. **Start command:** `npx prisma db push && node dist/index.js`
-7. Copy your Railway public URL (e.g. `https://sphere-perps-api.up.railway.app`)
+5. Deploy → copy the `.onrender.com` URL
 
-### Railway monorepo setup (from repo root)
+---
 
-- **Root Directory:** `/`
-- **Build:** `npm install && npm run db:generate -w backend && npm run build -w backend`
-- **Start:** `npm run start -w backend`
+## 4. Wire frontend to backend
 
-## 3. Deploy Frontend (Vercel)
+1. **Vercel** → Project → Settings → Environment Variables:
+   - `VITE_API_URL` = `https://YOUR-SERVICE.onrender.com`
+   - `VITE_WS_URL` = `wss://YOUR-SERVICE.onrender.com/ws`
 
-1. Go to [vercel.com](https://vercel.com) → Add New Project → Import GitHub repo
-2. **Framework Preset:** Vite
-3. **Root Directory:** leave as repo root (uses `vercel.json`)
-4. Add environment variables:
+2. Redeploy Vercel (Deployments → Redeploy, or `git push`)
 
-```
-VITE_API_URL=https://your-api.up.railway.app
-VITE_WS_URL=wss://your-api.up.railway.app/ws
-VITE_SPHERE_WALLET_URL=https://sphere.unicity.network
-```
+3. Test:
+   - `https://YOUR-SERVICE.onrender.com/health` → `{ "status": "ok" }`
+   - https://sphere-perps.vercel.app → markets should load
 
-5. Deploy
+---
 
-## 4. Post-deploy checklist
+## Other free alternatives (if Render doesn't work)
 
-- [ ] Update `CORS_ORIGIN` on backend to your Vercel URL
-- [ ] Run `npm run db:setup` against Neon if schema not yet pushed
-- [ ] Test `/health` on backend URL
-- [ ] Test Connect Wallet on Vercel frontend
-- [ ] Rotate Neon DB password (was shared in chat)
+| Platform | Notes |
+|----------|-------|
+| [Fly.io](https://fly.io) | Free allowance; needs `fly.toml` |
+| [Koyeb](https://koyeb.com) | Free nano instances |
+| [Oracle Cloud](https://oracle.com/cloud/free) | Always-free VPS — more setup |
 
-## 5. Sphere Wallet
+---
 
-Add your Vercel domain to allowed origins in Sphere Wallet when connecting from production.
+## Post-deploy checklist
+
+- [ ] Backend `/health` returns OK
+- [ ] Vercel env vars point to Render URL
+- [ ] `CORS_ORIGIN` on Render = `https://sphere-perps.vercel.app`
+- [ ] Neon password rotated (was shared in chat)
+- [ ] Connect Wallet tested on production URL

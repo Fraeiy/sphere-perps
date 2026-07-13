@@ -1,9 +1,0 @@
-[build]
-builder = "nixpacks"
-buildCommand = "npm install && npm run db:generate -w backend && npm run build -w backend"
-
-[deploy]
-startCommand = "npm run db:push -w backend && npm run start -w backend"
-healthcheckPath = "/health"
-healthcheckTimeout = 300
-restartPolicyType = "on_failure"
