@@ -18,3 +18,4 @@ backend/prisma/dev.db-journal
 .idea/
 coverage/
 *.tsbuildinfo
+.vercel
