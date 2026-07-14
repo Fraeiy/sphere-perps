@@ -1,5 +1,7 @@
 -- Seed markets, achievements, competition, and initial market_prices rows
 
+SET search_path TO perps, public;
+
 INSERT INTO markets (symbol, base_asset, binance_symbol, tick_size, lot_size, min_order_size, max_leverage, maintenance_margin, initial_margin, funding_rate, sort_order, is_trending)
 VALUES
   ('BTC/USD', 'BTC', 'BTCUSDT', 0.01, 0.001, 0.001, 100, 0.005, 0.01, 0.0001, 1, true),

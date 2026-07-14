@@ -3,8 +3,8 @@
 [api]
 enabled = true
 port = 54321
-schemas = ["public"]
-extra_search_path = ["public"]
+schemas = ["public", "perps"]
+extra_search_path = ["public", "perps"]
 
 [db]
 port = 54322
@@ -13,6 +13,9 @@ major_version = 15
 [studio]
 enabled = true
 port = 54323
+
+[functions.perps-api]
+verify_jwt = false
 
 [functions.platform]
 verify_jwt = false

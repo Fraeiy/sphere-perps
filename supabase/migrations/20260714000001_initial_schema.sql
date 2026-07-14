@@ -1,6 +1,8 @@
--- Sphere Perps — Supabase schema (migrated from Prisma)
+-- Sphere Perps — isolated schema (shares Supabase project with sphere-2048)
 
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA extensions;
+CREATE SCHEMA IF NOT EXISTS perps;
+SET search_path TO perps, public, extensions;
 
 -- Enums
 CREATE TYPE margin_mode AS ENUM ('CROSS', 'ISOLATED');
@@ -24,7 +26,7 @@ CREATE TABLE users (
   chain_pubkey    TEXT NOT NULL UNIQUE,
   direct_address  TEXT,
   nametag         TEXT,
-  referral_code   TEXT NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(8), 'hex'),
+  referral_code   TEXT NOT NULL UNIQUE DEFAULT encode(extensions.gen_random_bytes(8), 'hex'),
   referred_by_id  UUID REFERENCES users(id),
   is_admin        BOOLEAN NOT NULL DEFAULT false,
   is_banned       BOOLEAN NOT NULL DEFAULT false,

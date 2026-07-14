@@ -19,5 +19,5 @@ backend/prisma/dev.db-journal
 coverage/
 *.tsbuildinfo
 .vercel
-.vercel
+supabase/.temp/
 .env*

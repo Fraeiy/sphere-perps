@@ -17,7 +17,9 @@ function rowToTicker(row: Record<string, unknown>): Ticker {
 }
 
 class RealtimeClient {
-  private client = url && anonKey ? createClient(url, anonKey) : null;
+  private client = url && anonKey
+    ? createClient(url, anonKey, { db: { schema: 'perps' } })
+    : null;
   private channel: RealtimeChannel | null = null;
 
   subscribeMarketPrices(onTicker: (ticker: Ticker) => void) {
@@ -27,7 +29,7 @@ class RealtimeClient {
       .channel('sphere-perps-prices')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'market_prices' },
+        { event: '*', schema: 'perps', table: 'market_prices' },
         (payload) => {
           if (payload.new && typeof payload.new === 'object') {
             onTicker(rowToTicker(payload.new as Record<string, unknown>));

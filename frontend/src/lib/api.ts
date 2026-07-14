@@ -2,7 +2,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const API_URL = SUPABASE_URL
-  ? `${SUPABASE_URL}/functions/v1/platform`
+  ? `${SUPABASE_URL}/functions/v1/perps-api`
   : (import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? '/api' : ''));
 
 class ApiClient {

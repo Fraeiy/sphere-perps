@@ -15,7 +15,7 @@
     "db:seed": "npm run db:seed -w backend",
     "db:studio": "npm run db:studio -w backend",
     "supabase:push": "supabase db push",
-    "supabase:deploy": "supabase functions deploy platform && supabase functions deploy process-markets"
+    "supabase:deploy": "supabase functions deploy perps-api && supabase functions deploy process-markets"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
