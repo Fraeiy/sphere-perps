@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { wsClient } from '@/lib/websocket';
+import { realtimeClient } from '@/lib/realtime';
 import { useTradingStore } from '@/stores/trading-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { MarketSidebar } from '@/components/trading/MarketSidebar';
@@ -35,11 +35,10 @@ export function TradePage() {
   }, [markets, selectedMarket, setSelectedMarket]);
 
   useEffect(() => {
-    wsClient.connect(api.getToken() ?? undefined);
-    const unsub = wsClient.on('ticker', (data) => {
-      updateTicker(data as Parameters<typeof updateTicker>[0]);
+    const unsub = realtimeClient.subscribeMarketPrices((ticker) => {
+      updateTicker(ticker);
     });
-    return () => { unsub(); };
+    return () => { unsub?.(); };
   }, [updateTicker]);
 
   return (

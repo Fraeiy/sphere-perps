@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { api, type User } from '@/lib/api';
 import { sphereWallet } from '@/lib/sphere-wallet';
-import { wsClient } from '@/lib/websocket';
+import { realtimeClient } from '@/lib/realtime';
 
 interface AuthState {
   user: User | null;
@@ -58,7 +58,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       try {
         const user = await api.getMe();
         set({ user, isLoading: false });
-        wsClient.connect(token);
         return;
       } catch {
         api.setToken(null);
@@ -94,7 +93,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
 
       api.setToken(token);
-      wsClient.connect(token);
       set({ user, isConnecting: false, connectError: null });
     } catch (err) {
       const connectError = formatConnectError(err);
@@ -110,7 +108,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   disconnect: async () => {
     await sphereWallet.disconnect();
     api.setToken(null);
-    wsClient.disconnect();
+    realtimeClient.disconnect();
     set({ user: null, connectError: null });
   },
 }));

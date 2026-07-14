@@ -1,4 +1,9 @@
-const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? '/api' : '');
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const API_URL = SUPABASE_URL
+  ? `${SUPABASE_URL}/functions/v1/platform`
+  : (import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? '/api' : ''));
 
 class ApiClient {
   private token: string | null = null;
@@ -20,8 +25,14 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
+    if (SUPABASE_ANON_KEY) headers.apikey = SUPABASE_ANON_KEY;
+
     const token = this.getToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    } else if (SUPABASE_ANON_KEY) {
+      headers.Authorization = `Bearer ${SUPABASE_ANON_KEY}`;
+    }
 
     const res = await fetch(`${API_URL}${path}`, { ...options, headers });
 
