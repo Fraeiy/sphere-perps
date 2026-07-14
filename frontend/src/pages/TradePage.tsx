@@ -43,13 +43,23 @@ export function TradePage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)]">
-      <div className="flex items-center justify-between px-4 py-1 border-b border-border bg-card/30">
-        {marketSummary ? (
-          <div className="flex items-center gap-2 text-xs text-muted max-w-2xl truncate">
-            <Sparkles className="w-3 h-3 text-accent shrink-0" />
-            <span>{marketSummary.summary}</span>
-          </div>
-        ) : null}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border panel-surface">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
+          {selectedMarket && (
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="font-bold text-lg">{selectedMarket.symbol}</span>
+              <span className="text-xs text-muted px-2 py-0.5 rounded-full bg-card border border-border">
+                Perpetual
+              </span>
+            </div>
+          )}
+          {marketSummary ? (
+            <div className="flex items-center gap-2 text-xs text-muted max-w-xl truncate border-l border-border pl-4">
+              <Sparkles className="w-3.5 h-3.5 text-accent shrink-0" />
+              <span>{marketSummary.summary}</span>
+            </div>
+          ) : null}
+        </div>
         {user && <WalletModal />}
       </div>
 

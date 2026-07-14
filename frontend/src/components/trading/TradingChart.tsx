@@ -33,16 +33,16 @@ export function TradingChart() {
     const chart = createChart(chartRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#6b7280',
+        textColor: '#8a7f72',
         fontFamily: 'JetBrains Mono',
       },
       grid: {
-        vertLines: { color: '#1e2230' },
-        horzLines: { color: '#1e2230' },
+        vertLines: { color: '#2a2420' },
+        horzLines: { color: '#2a2420' },
       },
       crosshair: { mode: 1 },
-      rightPriceScale: { borderColor: '#1e2230' },
-      timeScale: { borderColor: '#1e2230', timeVisible: true },
+      rightPriceScale: { borderColor: '#2a2420' },
+      timeScale: { borderColor: '#2a2420', timeVisible: true },
       width: chartRef.current.clientWidth,
       height: chartRef.current.clientHeight,
     });

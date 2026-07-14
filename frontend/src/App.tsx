@@ -26,8 +26,11 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-pulse text-muted">Loading Sphere Perps...</div>
+      <div className="flex flex-col items-center justify-center h-screen gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-accent-deep flex items-center justify-center shadow-lg shadow-accent/30 animate-pulse">
+          <img src="/sphere.svg" alt="" className="w-7 h-7" />
+        </div>
+        <div className="text-sm text-muted">Loading Sphere Perps...</div>
       </div>
     );
   }

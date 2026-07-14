@@ -4,21 +4,26 @@
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  --color-background: #0a0b0f;
-  --color-foreground: #f0f2f5;
-  --color-card: #12141a;
-  --color-card-hover: #1a1d26;
-  --color-border: #1e2230;
-  --color-border-light: #2a3040;
-  --color-muted: #6b7280;
-  --color-accent: #6366f1;
-  --color-accent-hover: #818cf8;
+  /* Unicity brand palette (adapted for dark trading UI) */
+  --color-background: #0c0a09;
+  --color-foreground: #faf7f4;
+  --color-card: #141210;
+  --color-card-hover: #1c1916;
+  --color-border: #2a2420;
+  --color-border-light: #3d342c;
+  --color-muted: #8a7f72;
+  --color-accent: #f47a20;
+  --color-accent-hover: #ff9a3c;
+  --color-accent-deep: #e56717;
+  --color-accent-muted: #cc5200;
+  --color-cream: #fff3e5;
+  --color-ink: #5b3d2a;
   --color-long: #22c55e;
   --color-long-muted: #166534;
   --color-short: #ef4444;
   --color-short-muted: #991b1b;
   --color-warning: #f59e0b;
-  --color-glass: rgba(18, 20, 26, 0.8);
+  --color-glass: rgba(20, 18, 16, 0.85);
 }
 
 * {
@@ -27,7 +32,10 @@
 
 body {
   margin: 0;
-  background: var(--color-background);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(244, 122, 32, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(229, 103, 23, 0.08), transparent),
+    var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -39,8 +47,12 @@ body {
 
 .glass {
   background: var(--color-glass);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--color-border);
+}
+
+.unicity-glow {
+  box-shadow: 0 0 40px rgba(244, 122, 32, 0.08);
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -58,6 +70,16 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
+}
+
+.panel-surface {
+  background: linear-gradient(180deg, rgba(28, 25, 22, 0.6) 0%, rgba(20, 18, 16, 0.4) 100%);
+  border: 1px solid var(--color-border);
 }

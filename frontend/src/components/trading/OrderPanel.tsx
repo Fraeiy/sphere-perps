@@ -86,7 +86,7 @@ export function OrderPanel() {
   }
 
   return (
-    <aside className="w-80 border-l border-border flex flex-col shrink-0 bg-card/30">
+    <aside className="w-80 border-l border-border flex flex-col shrink-0 panel-surface">
       <div className="p-4 space-y-4 flex-1 overflow-y-auto scrollbar-thin">
         <div className="flex gap-1 bg-card rounded-lg p-1">
           {(['MARKET', 'LIMIT'] as const).map((t) => (

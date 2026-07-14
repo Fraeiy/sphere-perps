@@ -58,6 +58,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       try {
         const user = await api.getMe();
         set({ user, isLoading: false });
+        sphereWallet.trySilentConnect().catch(() => undefined);
         return;
       } catch {
         api.setToken(null);

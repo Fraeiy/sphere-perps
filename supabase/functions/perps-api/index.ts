@@ -380,7 +380,7 @@ Deno.serve(async (req) => {
       const { data: system } = await supabase.from('system_settings').select('deposit_enabled').eq('id', 'global').maybeSingle();
       if (system && !system.deposit_enabled) return errorResponse('Deposits are currently disabled', 403);
 
-      const { data: deposit } = await supabase.from('deposits').insert({
+      const { data: deposit, error: depositError } = await supabase.from('deposits').insert({
         user_id: auth.userId,
         amount,
         sphere_transfer_id: sphereTransferId ?? null,
@@ -389,12 +389,27 @@ Deno.serve(async (req) => {
         completed_at: new Date().toISOString(),
       }).select('*').single();
 
+      if (depositError || !deposit) {
+        return errorResponse(depositError?.message ?? 'Deposit failed', 500);
+      }
+
       const { data: bal } = await supabase.from('balances').select('*').eq('user_id', auth.userId).maybeSingle();
+      const newAvailable = round8(num(bal?.available ?? 0) + amount);
+      const newTotalDeposited = round8(num(bal?.total_deposited ?? 0) + amount);
+
       if (bal) {
-        await supabase.from('balances').update({
-          available: round8(num(bal.available) + amount),
-          total_deposited: round8(num(bal.total_deposited) + amount),
+        const { error: balanceError } = await supabase.from('balances').update({
+          available: newAvailable,
+          total_deposited: newTotalDeposited,
         }).eq('user_id', auth.userId);
+        if (balanceError) return errorResponse(balanceError.message, 500);
+      } else {
+        const { error: balanceError } = await supabase.from('balances').insert({
+          user_id: auth.userId,
+          available: newAvailable,
+          total_deposited: newTotalDeposited,
+        });
+        if (balanceError) return errorResponse(balanceError.message, 500);
       }
 
       await notify(supabase, auth.userId, {

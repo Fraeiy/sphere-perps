@@ -36,7 +36,7 @@ export function MarketSidebar({ markets }: Props) {
         onClick={() => setSelectedMarket(market)}
         className={cn(
           'w-full flex items-center gap-2 px-3 py-2.5 text-left transition-all rounded-lg hover:bg-card-hover group',
-          isSelected && 'bg-card-hover border-l-2 border-accent',
+          isSelected && 'bg-accent/10 border-l-2 border-accent',
         )}
       >
         <button
@@ -60,8 +60,8 @@ export function MarketSidebar({ markets }: Props) {
   };
 
   return (
-    <aside className="w-64 border-r border-border flex flex-col shrink-0 bg-card/50">
-      <div className="p-3 border-b border-border">
+    <aside className="w-64 border-r border-border flex flex-col shrink-0 panel-surface">
+      <div className="p-3 border-b border-border/80">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
           <Input
