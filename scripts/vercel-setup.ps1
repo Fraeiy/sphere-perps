@@ -18,8 +18,8 @@ Write-Host "  npx vercel env add VITE_SPHERE_WALLET_URL"
 Write-Host "  npx vercel --prod`n"
 
 Write-Host "Required Environment Variables:" -ForegroundColor Yellow
-Write-Host "  VITE_API_URL          = https://your-backend.railway.app"
-Write-Host "  VITE_WS_URL           = wss://your-backend.railway.app/ws"
+Write-Host "  VITE_API_URL          = https://sphere-perps-api.onrender.com"
+Write-Host "  VITE_WS_URL           = wss://sphere-perps-api.onrender.com/ws"
 Write-Host "  VITE_SPHERE_WALLET_URL = https://sphere.unicity.network`n"
 
 Write-Host "Build settings (auto-detected from vercel.json):" -ForegroundColor Gray
