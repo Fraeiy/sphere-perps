@@ -13,9 +13,7 @@
     "db:setup": "npm run db:setup -w backend",
     "db:migrate": "npm run db:migrate -w backend",
     "db:seed": "npm run db:seed -w backend",
-    "db:studio": "npm run db:studio -w backend",
-    "supabase:push": "supabase db push",
-    "supabase:deploy": "supabase functions deploy perps-api && supabase functions deploy process-markets"
+    "db:studio": "npm run db:studio -w backend"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

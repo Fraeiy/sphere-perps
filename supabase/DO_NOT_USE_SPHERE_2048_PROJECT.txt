@@ -1,0 +1,3 @@
+# DO NOT link this app to the sphere-2048 Supabase project (qikjgngheylczoqwspgl).
+# That project is for Sphere 2048 only. Create a separate Supabase project for perps.
+# Overwriting FRONTEND_URL / deploying perps functions onto 2048 broke CORS in production.

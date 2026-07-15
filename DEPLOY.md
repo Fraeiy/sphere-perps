@@ -1,62 +1,57 @@
 # Deployment Guide
 
-## Architecture (Supabase + Vercel)
+## Architecture (Neon + Express + Vercel)
 
 | Service | Platform | Cost |
 |---------|----------|------|
 | Frontend | **Vercel** | Free |
-| API + Trading Engine | **Supabase Edge Functions** | Free tier |
-| Database + Realtime | **Supabase Postgres** | Free tier |
-| Price/Liquidation Cron | **GitHub Actions** (1 min) | Free |
+| API + Trading Engine + WebSocket | **Render** (Express) | Free tier |
+| Database | **Neon PostgreSQL** | Free tier |
 
-> **No Render or Railway required.** Backend runs on Supabase Edge Functions, same pattern as `sphere-2048` and `sphere-predict`.
+> Uses the original Express/Prisma backend in `backend/` with Neon as the database.
+> The `supabase/` folder is legacy and not used in production.
 
 ---
 
-## 1. Supabase project
+## 1. Neon database
 
-1. Create a project at [supabase.com](https://supabase.com) (or reuse an existing one)
-2. Install CLI: `npm install -g supabase` (or use `npx supabase`)
-3. From repo root:
+1. Create a project at [neon.tech](https://neon.tech)
+2. Copy the connection string (with `?sslmode=require`)
+3. Set as `DATABASE_URL` in `backend/.env` locally and in Render
 
 ```powershell
-cd sphere-perps
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF
-supabase db push
-supabase functions deploy platform
-supabase functions deploy process-markets
+cd sphere-perps/backend
+# Edit .env with your Neon DATABASE_URL
+npm run db:push
+npm run db:seed
 ```
-
-4. Set Edge Function secrets (Dashboard → Edge Functions → Secrets, or CLI):
-
-```
-JWT_SECRET=<random 32+ char string>
-FRONTEND_URL=https://sphere-perps.vercel.app
-SPHERE_TREASURY_NAMETAG=sphere-perps-treasury
-CRON_SECRET=<random string for cron auth>
-AI_PROVIDER=mock
-ADMIN_WALLET_PUBKEYS=<your wallet pubkey for admin>
-```
-
-`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `SUPABASE_ANON_KEY` are injected automatically by Supabase.
 
 ---
 
-## 2. Cron — trading engine
+## 2. Backend — Render
 
-The `process-markets` function fetches Binance prices, updates liquidations, and fills limit/stop orders.
+1. Go to [Render Dashboard](https://dashboard.render.com/create?type=web)
+2. Connect repo `Fraeiy/sphere-perps`
+3. Settings:
+   - **Build:** `npm install && npm run db:generate -w backend && npm run build -w backend`
+   - **Start:** `npm run db:push -w backend && npm run start -w backend`
+   - **Health check:** `/health`
 
-**Option A — GitHub Actions** (included in `.github/workflows/process-markets.yml`)
+4. Environment variables:
 
-Add repo secrets:
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `CRON_SECRET` (same value as Supabase secret)
+```
+NODE_ENV=production
+PORT=4000
+DATABASE_URL=<your-neon-connection-string>
+JWT_SECRET=<random 32+ char string>
+CORS_ORIGIN=https://sphere-perps.vercel.app
+SPHERE_ORACLE_API_KEY=sk_ddc3cfcc001e4a28ac3fad7407f99590
+SPHERE_WALLET_API_URL=https://wallet-api.unicity.network
+SPHERE_TREASURY_NAMETAG=sphere-perps-treasury
+AI_PROVIDER=mock
+```
 
-**Option B — Supabase Dashboard**
-
-Project → Edge Functions → `process-markets` → Schedules → every 1 minute, header `x-cron-secret: YOUR_CRON_SECRET`
+Or use the included `render.yaml` Blueprint.
 
 ---
 
@@ -64,23 +59,22 @@ Project → Edge Functions → `process-markets` → Schedules → every 1 minut
 
 **Live:** https://sphere-perps.vercel.app
 
-Set environment variables in Vercel → Settings → Environment Variables:
+Set environment variables (remove any `VITE_SUPABASE_*` vars):
 
 ```
-VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_API_URL=https://sphere-perps-api.onrender.com
+VITE_WS_URL=wss://sphere-perps-api.onrender.com/ws
 VITE_SPHERE_WALLET_URL=https://sphere.unicity.network
 ```
 
-Redeploy after setting vars.
+Redeploy after updating vars.
 
 ---
 
 ## 4. Verify
 
-1. `GET https://YOUR_PROJECT.supabase.co/functions/v1/platform/health`  
-   Headers: `apikey: <anon-key>`, `Authorization: Bearer <anon-key>`
-2. `POST .../functions/v1/process-markets` with `x-cron-secret` header → `{ "ok": true }`
+1. `https://sphere-perps-api.onrender.com/health` → `{ "status": "ok" }`
+2. `https://sphere-perps-api.onrender.com/markets` → 6 markets
 3. https://sphere-perps.vercel.app → markets load, Connect Wallet works
 
 ---
@@ -88,33 +82,12 @@ Redeploy after setting vars.
 ## Local development
 
 ```powershell
-# Terminal 1 — Supabase local (optional)
-supabase start
-supabase functions serve
+# Terminal 1 — API (uses Neon via backend/.env)
+cd sphere-perps
+npm run dev -w backend
 
-# Terminal 2 — Frontend
-cd frontend
-# .env.local:
-# VITE_SUPABASE_URL=http://127.0.0.1:54321
-# VITE_SUPABASE_ANON_KEY=<from supabase status>
-npm run dev
+# Terminal 2 — Frontend (proxies /api → localhost:4000)
+npm run dev -w frontend
 ```
 
-Legacy Express backend in `backend/` still works locally with Neon if needed — set `VITE_API_URL=http://localhost:4000` instead of Supabase vars.
-
----
-
-## Post-deploy checklist
-
-- [ ] `supabase db push` applied (markets seeded)
-- [ ] `platform` + `process-markets` functions deployed
-- [ ] Cron running (GitHub Action or Supabase schedule)
-- [ ] Vercel `VITE_SUPABASE_*` env vars set
-- [ ] Connect Wallet tested on production URL
-- [ ] Realtime: prices update on Trade page without refresh
-
----
-
-## Legacy Render path (optional)
-
-The `backend/` Express server and `render.yaml` remain in the repo if you prefer a always-on WebSocket server. Supabase is the recommended production path.
+Frontend uses `/api` proxy in dev — no Vercel env vars needed locally.
