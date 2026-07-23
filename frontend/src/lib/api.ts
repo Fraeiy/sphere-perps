@@ -24,6 +24,11 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
+    // localtunnel interstitial bypass (temporary public tunnels only)
+    if (API_URL.includes('loca.lt')) {
+      headers['Bypass-Tunnel-Reminder'] = '1';
+    }
+
     const token = this.getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
 
