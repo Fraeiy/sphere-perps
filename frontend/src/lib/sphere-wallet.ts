@@ -1,8 +1,13 @@
 import { autoConnect } from '@unicitylabs/sphere-sdk/connect/browser';
 import { SPHERE_NETWORKS } from '@unicitylabs/sphere-sdk/connect';
+import { parseTokenAmount } from '@unicitylabs/sphere-sdk';
 
 const WALLET_URL = import.meta.env.VITE_SPHERE_WALLET_URL ?? 'https://sphere.unicity.network';
 const SESSION_KEY = 'sphere-perps-session';
+
+/** Unicity testnet2 UCT native coin (64-hex id, 18 decimals). */
+export const UCT_COIN_ID = 'f581d30f593e4b369d684a4563b5246f07b1d265f7178a2c0a82b81f39c24dc0';
+export const UCT_DECIMALS = 18;
 
 export interface SphereIdentity {
   chainPubkey: string;
@@ -17,6 +22,10 @@ interface SignMessageResult {
 
 interface SendResult {
   id?: string;
+  transferId?: string;
+  status?: string;
+  deliveryPending?: boolean;
+  success?: boolean;
 }
 
 export class SphereWalletService {
@@ -81,9 +90,27 @@ export class SphereWalletService {
     return this.client.query('sphere_getBalance');
   }
 
-  async sendTokens(to: string, amount: string, coinId: string) {
+  /**
+   * Send fungible tokens via Sphere Connect.
+   * amount is human-readable UCT (e.g. "10.5"); converted to base units (18 decimals).
+   * coinId must be lowercase 64-hex for Connect v2 (symbols are rejected).
+   */
+  async sendTokens(to: string, humanAmount: string | number, coinId = UCT_COIN_ID) {
     if (!this.client) throw new Error('Wallet not connected');
-    return this.client.intent('send', { to, amount, coinId }) as Promise<SendResult>;
+
+    const amount = parseTokenAmount(String(humanAmount), UCT_DECIMALS).toString();
+    const result = (await this.client.intent('send', {
+      to,
+      amount,
+      coinId,
+    })) as SendResult;
+
+    return {
+      id: result.transferId ?? result.id,
+      transferId: result.transferId ?? result.id,
+      status: result.status,
+      deliveryPending: result.deliveryPending,
+    };
   }
 
   async disconnect() {

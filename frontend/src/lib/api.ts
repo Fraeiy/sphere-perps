@@ -15,6 +15,10 @@ class ApiClient {
   }
 
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    if (!API_URL && !import.meta.env.DEV) {
+      throw new Error('API URL not configured. Set VITE_API_URL for production.');
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
@@ -23,11 +27,18 @@ class ApiClient {
     const token = this.getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+    let res: Response;
+    try {
+      res = await fetch(`${API_URL}${path}`, { ...options, headers });
+    } catch {
+      throw new Error(
+        'Cannot reach trading API. Backend is offline or blocked — deploy the Express API (Render + Neon) or run npm run dev -w backend.',
+      );
+    }
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? 'Request failed');
+      throw new Error(err.error ?? `Request failed (${res.status})`);
     }
 
     return res.json();

@@ -14,6 +14,7 @@ export class SphereService {
     }
 
     try {
+      // SDK 0.12: network is required on createNodeProviders (testnet === testnet2 gateway)
       const baseProviders = createNodeProviders({
         network: 'testnet',
         dataDir: config.sphere.dataDir,

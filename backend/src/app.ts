@@ -23,7 +23,22 @@ export function createApp(priceFeed: PriceFeedService, tradingEngine: TradingEng
   const app = express();
 
   app.use(helmet());
-  app.use(cors({ origin: config.corsOrigin, credentials: true }));
+  // Allow production frontend + local dev (comma-separated CORS_ORIGIN supported)
+  const allowedOrigins = [
+    ...config.corsOrigin.split(',').map((s) => s.trim()).filter(Boolean),
+    'https://sphere-perps.vercel.app',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+  ];
+  app.use(
+    cors({
+      origin: (origin, cb) => {
+        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+        return cb(null, false);
+      },
+      credentials: true,
+    }),
+  );
   app.use(express.json());
   app.use(
     rateLimit({

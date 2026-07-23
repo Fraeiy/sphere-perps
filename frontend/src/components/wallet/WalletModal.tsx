@@ -55,16 +55,16 @@ export function WalletModal() {
         await sphereWallet.trySilentConnect();
       }
 
+      // Prefer on-chain UCT transfer via Sphere Connect (SDK 0.12+ requires hex coinId + base units)
       if (wallet?.treasuryNametag && sphereWallet.isConnected()) {
-        const amountBase = String(Math.floor(amount * 1_000_000));
         const result = await sphereWallet.sendTokens(
           `@${wallet.treasuryNametag}`,
-          amountBase,
-          'UCT',
+          amount,
         );
-        return api.deposit(amount, result.id);
+        return api.deposit(amount, result.transferId ?? result.id);
       }
 
+      // Fallback: credit trading balance without on-chain transfer (dev / wallet not resumed)
       return api.deposit(amount);
     },
     onSuccess: (_data, amount) => {

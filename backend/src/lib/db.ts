@@ -1,7 +1,8 @@
 import { prisma } from './prisma.js';
 
-const MAX_RETRIES = 10;
-const RETRY_DELAY_MS = 1500;
+// Neon free tier scale-to-zero can take several seconds to wake
+const MAX_RETRIES = 15;
+const RETRY_DELAY_MS = 2000;
 
 export async function connectDatabase(): Promise<void> {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {

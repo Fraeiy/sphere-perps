@@ -25,19 +25,37 @@ function buildAuthMessage(nonce: string): string {
 }
 
 function formatConnectError(err: unknown): string {
+  const code = (err as { code?: number })?.code;
+  // Sphere Connect v2 error codes (SDK ≥ 0.9 / protocol 2.0)
+  if (code === 4007) {
+    return 'Wallet protocol mismatch. Update Sphere Wallet and refresh this app (SDK 0.12).';
+  }
+  if (code === 4008) {
+    return 'Wallet network mismatch. Switch your Sphere Wallet to testnet2.';
+  }
+  if (code === 4003 || code === 4200) {
+    return 'Connection rejected. Approve the connection in your Sphere Wallet.';
+  }
+  if (code === 4100) {
+    return 'Insufficient UCT balance in your Sphere Wallet.';
+  }
+
   if (err instanceof Error) {
     const msg = err.message;
-    if (msg.includes('popup')) {
-      return 'Popup blocked. Allow popups for localhost, or install the Sphere browser extension.';
+    if (msg.includes('popup') || msg.includes('Popup')) {
+      return 'Popup blocked. Allow popups for this site, or install the Sphere browser extension.';
     }
     if (msg.includes('USER_REJECTED') || msg.includes('rejected')) {
       return 'Connection rejected. Approve the connection in your Sphere Wallet.';
     }
-    if (msg.includes('INCOMPATIBLE_NETWORK')) {
+    if (msg.includes('INCOMPATIBLE_NETWORK') || msg.includes('network')) {
       return 'Wallet network mismatch. Switch your Sphere Wallet to testnet2.';
     }
     if (msg.includes('Invalid signature')) {
       return 'Signature verification failed. Please try connecting again.';
+    }
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+      return 'Cannot reach the trading API. The backend may be offline — try again in a moment.';
     }
     return msg;
   }
